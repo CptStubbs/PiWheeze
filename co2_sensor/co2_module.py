@@ -3,25 +3,39 @@ import board
 import busio
 import adafruit_scd30
 
-i2c = busio.I2C(board.SCL, board.SDA)
-scd = adafruit_scd30.SCD30(i2c)
+REFERENCE_LEVEL_CO2_PPM = 400
+SAMPLING_INTERVAL_SECONDS = 30
 
-# Optional: force recalibration to current CO2 level (outdoors ~415 ppm)
-# scd.forced_recalibration_reference = 415
+class Co2Sensor:
+    def __init__(self):
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.scd = adafruit_scd30.SCD30(self.i2c)
 
+    def calibrate_sensor(self):
+        """
+        Run the calibration routine for the sensor.
 
-def experimental():
+        Assumes that sensor is in stable, outside level air
+        """
 
-    print("Warming up sensor...")
-    while not scd.data_available:
-        time.sleep(0.5)
+        self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
 
-    while True:
-        print(f"CO2: {scd.CO2:.1f} ppm")
-        print(f"Temperature: {scd.temperature:.1f} °C")
-        print(f"Humidity: {scd.relative_humidity:.1f} %")
-        print("-" * 30)
-        time.sleep(2)
+    def simple_terminal_mode(self):
+        """
+        Prints info to terminal
+        Mostly used for debugging
+        """
+        print("Warming up sensor...")
+        while not self.scd.data_available:
+            time.sleep(SAMPLING_INTERVAL_SECONDS)
+
+        while True:
+            print(f"CO2: {self.scd.CO2:.1f} ppm")
+            print(f"Temperature: {self.scd.temperature:.1f} °C")
+            print(f"Humidity: {self.scd.relative_humidity:.1f} %")
+            print("-" * 30)
+            time.sleep(SAMPLING_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
-    experimental()
+    co2_sensor = Co2Sensor()
+    co2_sensor.simple_terminal_mode()
