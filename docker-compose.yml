@@ -10,3 +10,5 @@ services:
     volumes:
       - /proc:/proc
       - /sys:/sys
+    stdin_open: true  # keep stdin open (-i)
+    tty: true         # allocate pseudo-TTY (-t)
