@@ -3,7 +3,7 @@ import board
 import busio
 import adafruit_scd30
 
-REFERENCE_LEVEL_CO2_PPM = 400
+REFERENCE_LEVEL_CO2_PPM = 425
 SAMPLING_INTERVAL_SECONDS = 30
 
 class Co2Sensor:
