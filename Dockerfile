@@ -7,8 +7,10 @@ WORKDIR /app
 
 RUN apt update
 RUN apt install -y \
-  i2c-tools \
-  libgpiod2
+    gcc \
+    build-essential \
+    i2c-tools \
+    libgpiod2
 
 COPY requirements.txt .
 RUN pip install --upgrade pip \
