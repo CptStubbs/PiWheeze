@@ -2,6 +2,11 @@ services:
   app:
     build: .
     environment:
-      - BLINKA_FORCEBOARD=RASPBERRY_PI_3B
+      BLINKA_FORCEBOARD: RASPBERRY_PI_3B
+      BLINKA_I2C: 1
     devices:
       - /dev/i2c-1:/dev/i2c-1
+    privileged: true
+    volumes:
+      - /proc:/proc
+      - /sys:/sys
