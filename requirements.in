@@ -2,3 +2,4 @@ adafruit-circuitpython-scd30
 adafruit-blinka
 smbus2
 RPi.GPIO
+flask

@@ -1,7 +1,31 @@
+from flask import Flask, jsonify, request, render_template
 from co2_sensor.co2_module import Co2Sensor
 
+config = {
+    "refresh_interval_seconds": 1
+}
+APP_PORT = 5000
+sensor = Co2Sensor()
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return render_template(
+        "index.html",
+        interval=config["refresh_interval_seconds"]
+    )
+
+@app.route("/data")
+def data():
+    return jsonify(sensor.get_data())
+
+@app.route("/config", methods=["POST"])
+def update_config():
+    config.update(request.json)
+    return jsonify(config)
+
 def main():
-    sensor = Co2Sensor()
     print("*"*50)
     print("Made by CptStubbs")
     print("Welcome to the CO2 Sensor App! \n")
@@ -9,7 +33,7 @@ def main():
     print("Press Ctrl+C to exit")
     print("*" * 50)
 
-    sensor.simple_terminal_mode()
+    app.run(host="0.0.0.0", port=APP_PORT)
 
 if __name__ == "__main__":
     main()

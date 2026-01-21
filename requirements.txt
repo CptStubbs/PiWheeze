@@ -38,6 +38,21 @@ adafruit-pureio==1.1.11
     # via adafruit-blinka
 binho-host-adapter==0.1.6
     # via adafruit-blinka
+blinker==1.9.0
+    # via flask
+click==8.3.1
+    # via flask
+flask==3.1.2
+    # via -r requirements.in
+itsdangerous==2.2.0
+    # via flask
+jinja2==3.1.6
+    # via flask
+markupsafe==3.0.3
+    # via
+    #   flask
+    #   jinja2
+    #   werkzeug
 pyftdi==0.57.1
     # via adafruit-blinka
 pyserial==3.5
@@ -54,3 +69,5 @@ typing-extensions==4.15.0
     # via
     #   adafruit-circuitpython-register
     #   adafruit-circuitpython-typing
+werkzeug==3.1.5
+    # via flask
