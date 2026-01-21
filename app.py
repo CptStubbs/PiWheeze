@@ -12,7 +12,7 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return render_template(
-        "index.html",
+        "templates/index.html",
         interval=config["refresh_interval_seconds"]
     )
 
