@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, render_template
 from co2_sensor.co2_module import Co2Sensor
 
+import os
+
 config = {
     "refresh_interval_seconds": 1
 }
@@ -31,6 +33,7 @@ def main():
     print("Welcome to the CO2 Sensor App! \n")
     print("Running default terminal mode")
     print("Press Ctrl+C to exit")
+    print(os.listdir(os.getcwd()))
     print("*" * 50)
 
     app.run(host="0.0.0.0", port=APP_PORT)
