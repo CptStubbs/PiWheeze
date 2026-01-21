@@ -1,4 +1,3 @@
-import os
 from flask import Flask, jsonify, request, render_template
 from co2_sensor.co2_module import Co2Sensor
 
@@ -34,7 +33,6 @@ def main():
     print("Running default terminal mode")
     print("Press Ctrl+C to exit")
     print("*" * 50)
-
     app.run(host="0.0.0.0", port=APP_PORT)
 
 if __name__ == "__main__":

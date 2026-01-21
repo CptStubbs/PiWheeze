@@ -1,7 +1,7 @@
 import time
-import board
-import busio
-import adafruit_scd30
+from board import SCL, SDA
+from busio import I2C
+from adafruit_scd30 import SCD30
 
 REFERENCE_LEVEL_CO2_PPM = 425
 SAMPLING_INTERVAL_SECONDS = 10
@@ -9,8 +9,8 @@ WAIT_INTERVAL_SECONDS = 1
 
 class Co2Sensor:
     def __init__(self):
-        self.i2c = busio.I2C(board.SCL, board.SDA)
-        self.scd = adafruit_scd30.SCD30(self.i2c)
+        self.i2c = I2C(SCL, SDA)
+        self.scd = SCD30(self.i2c)
         self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
 
     def calibrate_sensor(self):
@@ -23,10 +23,9 @@ class Co2Sensor:
         self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
 
 
-    def get_data(self):
+    def get_data(self) -> None:
         """
         Get data from sensor or wait
-        :return:
         """
         while True:
             if self.scd.data_available:
