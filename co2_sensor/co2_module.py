@@ -16,6 +16,7 @@ class Co2Sensor:
             self.scd = SCD30(self.i2c)
             self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
             self.available = True
+            self.last_good_data = None
         except Exception as e:
             self.available = False
             self.error = str(e)
@@ -32,21 +33,28 @@ class Co2Sensor:
 
     def get_data(self) -> dict:
         if not self.available:
-            return {"status": "sensor_unavailable", "error": self.error}
+            return self.last_good_data or {
+                "status": "sensor_unavailable",
+                "error": self.error
+            }
 
         try:
             if not self.scd.data_available:
-                return {"status": "warming_up"}
+                return self.last_good_data or {"status": "warming_up"}
 
-            return {
+
+            data = {
                 "co2_ppm": self.scd.CO2,
                 "temperature": self.scd.temperature,
                 "humidity": self.scd.relative_humidity,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
 
-        except OSError as e:
-            return {"status": "i2c_error", "error": str(e)}
+            self.last_good_data = data
+            return data
+
+        except Exception:
+            return self.last_good_data or {"status": "i2c_error"}
 
     def simple_terminal_mode(self):
         """
