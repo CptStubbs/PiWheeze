@@ -4,13 +4,14 @@ from busio import I2C
 from adafruit_scd30 import SCD30
 from datetime import datetime
 
+S2C_FREQUENCY = 50000
 REFERENCE_LEVEL_CO2_PPM = 425
 SAMPLING_INTERVAL_SECONDS = 10
 WAIT_INTERVAL_SECONDS = 1
 
 class Co2Sensor:
     def __init__(self):
-        self.i2c = I2C(SCL, SDA)
+        self.i2c = I2C(SCL, SDA, frequency=S2C_FREQUENCY)
         self.scd = SCD30(self.i2c)
         self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
 
@@ -29,17 +30,16 @@ class Co2Sensor:
         Get data from sensor or wait
         :return: dict of data
         """
-        while True:
-            if self.scd.data_available:
-                data = {
-                    "co2_ppm": self.scd.CO2,
-                    "temperature": self.scd.temperature,
-                    "humidity": self.scd.relative_humidity,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-                return data
-            else:
-                time.sleep(WAIT_INTERVAL_SECONDS)
+        while not self.scd.data_available:
+            time.sleep(WAIT_INTERVAL_SECONDS)
+
+        data = {
+            "co2_ppm": self.scd.CO2,
+            "temperature": self.scd.temperature,
+            "humidity": self.scd.relative_humidity,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        return data
 
     def simple_terminal_mode(self):
         """
