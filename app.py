@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request, render_template
 from co2_sensor.co2_module import Co2Sensor
 
@@ -7,6 +8,7 @@ config = {
     "refresh_interval_seconds": 1
 }
 APP_PORT = 5000
+TEMPLATE_INDEX_PATH = os.path.join(os.path.dirname(__file__), "templates/index.html")
 sensor = Co2Sensor()
 
 app = Flask(__name__)
@@ -14,7 +16,7 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return render_template(
-        "templates/index.html",
+        TEMPLATE_INDEX_PATH,
         interval=config["refresh_interval_seconds"]
     )
 
@@ -33,7 +35,6 @@ def main():
     print("Welcome to the CO2 Sensor App! \n")
     print("Running default terminal mode")
     print("Press Ctrl+C to exit")
-    print(os.listdir(os.getcwd()))
     print("*" * 50)
 
     app.run(host="0.0.0.0", port=APP_PORT)
