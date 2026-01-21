@@ -6,9 +6,15 @@ config = {
 }
 APP_PORT = 5000
 INDEX_HTML = "index.html"
-sensor = Co2Sensor()
+sensor = None
 
 app = Flask(__name__)
+
+def get_sensor():
+    global sensor
+    if sensor is None:
+        sensor = Co2Sensor()
+    return sensor
 
 @app.route("/")
 def index():
@@ -19,7 +25,7 @@ def index():
 
 @app.route("/data")
 def data():
-    return jsonify(sensor.get_data())
+    return jsonify(get_sensor().get_data())
 
 @app.route("/config", methods=["POST"])
 def update_config():

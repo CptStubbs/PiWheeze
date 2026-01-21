@@ -11,9 +11,15 @@ WAIT_INTERVAL_SECONDS = 1
 
 class Co2Sensor:
     def __init__(self):
-        self.i2c = I2C(SCL, SDA, frequency=S2C_FREQUENCY)
-        self.scd = SCD30(self.i2c)
-        self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
+        try:
+            self.i2c = I2C(SCL, SDA)
+            self.scd = SCD30(self.i2c)
+            self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
+            self.available = True
+        except Exception as e:
+            self.available = False
+            self.error = str(e)
+            self.scd = None
 
     def calibrate_sensor(self):
         """
@@ -24,22 +30,23 @@ class Co2Sensor:
 
         self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
 
-
     def get_data(self) -> dict:
-        """
-        Get data from sensor or wait
-        :return: dict of data
-        """
-        while not self.scd.data_available:
-            time.sleep(WAIT_INTERVAL_SECONDS)
+        if not self.available:
+            return {"status": "sensor_unavailable", "error": self.error}
 
-        data = {
-            "co2_ppm": self.scd.CO2,
-            "temperature": self.scd.temperature,
-            "humidity": self.scd.relative_humidity,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        return data
+        try:
+            if not self.scd.data_available:
+                return {"status": "warming_up"}
+
+            return {
+                "co2_ppm": self.scd.CO2,
+                "temperature": self.scd.temperature,
+                "humidity": self.scd.relative_humidity,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+
+        except OSError as e:
+            return {"status": "i2c_error", "error": str(e)}
 
     def simple_terminal_mode(self):
         """
