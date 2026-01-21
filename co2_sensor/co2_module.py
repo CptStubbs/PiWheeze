@@ -4,12 +4,14 @@ import busio
 import adafruit_scd30
 
 REFERENCE_LEVEL_CO2_PPM = 425
-SAMPLING_INTERVAL_SECONDS = 30
+SAMPLING_INTERVAL_SECONDS = 10
+WAIT_INTERVAL_SECONDS = 1
 
 class Co2Sensor:
     def __init__(self):
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.scd = adafruit_scd30.SCD30(self.i2c)
+        self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
 
     def calibrate_sensor(self):
         """
@@ -20,6 +22,18 @@ class Co2Sensor:
 
         self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
 
+
+    def get_data(self):
+        """
+        Get data from sensor or wait
+        :return:
+        """
+        while True:
+            if self.scd.data_available:
+                return
+            else:
+                time.sleep(WAIT_INTERVAL_SECONDS)
+
     def simple_terminal_mode(self):
         """
         Prints info to terminal
@@ -27,14 +41,14 @@ class Co2Sensor:
         """
         print("Warming up sensor...")
         while not self.scd.data_available:
-            time.sleep(SAMPLING_INTERVAL_SECONDS)
+            time.sleep(WAIT_INTERVAL_SECONDS)
 
         while True:
+            self.get_data()
             print(f"CO2: {self.scd.CO2:.1f} ppm")
             print(f"Temperature: {self.scd.temperature:.1f} °C")
             print(f"Humidity: {self.scd.relative_humidity:.1f} %")
             print("-" * 30)
-            time.sleep(SAMPLING_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     co2_sensor = Co2Sensor()
