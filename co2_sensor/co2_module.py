@@ -11,16 +11,17 @@ WAIT_INTERVAL_SECONDS = 1
 
 class Co2Sensor:
     def __init__(self):
+        self.last_good_data = None
+        self.available = False
         try:
             self.i2c = I2C(SCL, SDA)
             self.scd = SCD30(self.i2c)
             self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
             self.available = True
-            self.last_good_data = None
         except Exception as e:
-            self.available = False
             self.error = str(e)
             self.scd = None
+            self.i2c = None
 
     def calibrate_sensor(self):
         """
