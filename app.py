@@ -2,13 +2,11 @@ import os
 from flask import Flask, jsonify, request, render_template
 from co2_sensor.co2_module import Co2Sensor
 
-import os
-
 config = {
     "refresh_interval_seconds": 1
 }
 APP_PORT = 5000
-TEMPLATE_INDEX_PATH = os.path.join(os.path.dirname(__file__), "templates/index.html")
+INDEX_HTML = "index.html"
 sensor = Co2Sensor()
 
 app = Flask(__name__)
@@ -16,7 +14,7 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return render_template(
-        TEMPLATE_INDEX_PATH,
+        INDEX_HTML,
         interval=config["refresh_interval_seconds"]
     )
 
