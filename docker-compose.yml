@@ -11,3 +11,4 @@ services:
       - /proc:/proc
       - /sys:/sys
     network_mode: host
+    restart: unless-stopped
