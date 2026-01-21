@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Dashboard</title>
+</head>
+<body>
+    <h1>Live Sensor Data</h1>
+    <pre id="data"></pre>
+
+    <h2>Configuration</h2>
+    <label>
+        Refresh Interval (seconds):
+        <input id="interval" type="number" step="0.1" value="{{ interval }}">
+    </label>
+    <button onclick="save()">Save</button>
+
+    <script>
+        function fetchData() {
+            fetch('/data')
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('data').textContent =
+                        JSON.stringify(d, null, 2);
+                });
+        }
+
+        function save() {
+            fetch('/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    refresh_interval: parseFloat(
+                        document.getElementById('interval').value
+                    )
+                })
+            });
+        }
+
+        setInterval(fetchData, 1000);
+        fetchData();
+    </script>
+</body>
+</html>
