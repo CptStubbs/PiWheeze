@@ -23,13 +23,19 @@ class Co2Sensor:
         self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
 
 
-    def get_data(self) -> None:
+    def get_data(self) -> dict:
         """
         Get data from sensor or wait
+        :return: dict of data
         """
         while True:
             if self.scd.data_available:
-                return
+                data = {
+                    "co2_ppm": self.scd.CO2,
+                    "temperature": self.scd.temperature,
+                    "humidity": self.scd.relative_humidity
+                }
+                return data
             else:
                 time.sleep(WAIT_INTERVAL_SECONDS)
 
