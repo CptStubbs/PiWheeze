@@ -10,3 +10,4 @@ services:
     volumes:
       - /proc:/proc
       - /sys:/sys
+    network_mode: host
