@@ -47,7 +47,7 @@ class Co2Sensor:
                 "co2_ppm": self.scd.CO2,
                 "temperature": self.scd.temperature,
                 "humidity": self.scd.relative_humidity,
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                "timestamp": datetime.now().astimezone().isoformat(timespec="seconds")
             }
 
             self.last_good_data = data
