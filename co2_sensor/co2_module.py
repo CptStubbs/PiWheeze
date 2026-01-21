@@ -2,6 +2,7 @@ import time
 from board import SCL, SDA
 from busio import I2C
 from adafruit_scd30 import SCD30
+from datetime import datetime
 
 REFERENCE_LEVEL_CO2_PPM = 425
 SAMPLING_INTERVAL_SECONDS = 10
@@ -33,7 +34,8 @@ class Co2Sensor:
                 data = {
                     "co2_ppm": self.scd.CO2,
                     "temperature": self.scd.temperature,
-                    "humidity": self.scd.relative_humidity
+                    "humidity": self.scd.relative_humidity,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 return data
             else:
