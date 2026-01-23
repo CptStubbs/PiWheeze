@@ -36,7 +36,11 @@ class Co2Sensor:
         if not self.available:
             return self.last_good_data or {
                 "status": "sensor_unavailable",
-                "error": self.error
+                "error": self.error,
+                "co2_ppm": None,
+                "temperature": None,
+                "humidity": None,
+                "timestamp": datetime.now().astimezone().isoformat(timespec="seconds")
             }
 
         try:

@@ -32,7 +32,7 @@ def index():
 def data():
     reading = get_sensor().get_data()
 
-    now = datetime.now()
+    now = datetime.now().astimezone()
     history.append(reading)
 
     # Drop old entries
