@@ -1,7 +1,9 @@
+import os
+import json
 from flask import Flask, jsonify, request, render_template
 from co2_sensor.co2_module import Co2Sensor
 from collections import deque
-from datetime import datetime, timedelta
+
 
 HISTORY_HOURS = 24
 history = deque()
@@ -10,6 +12,8 @@ config = {
     "refresh_interval_seconds": 1
 }
 APP_PORT = 5000
+DATA_FILE = os.path.join("data_storage", "data.csv")
+app = Flask(__name__)
 INDEX_HTML = "index.html"
 sensor = None
 
@@ -30,21 +34,12 @@ def index():
 
 @app.route("/data")
 def data():
+    # Get current value
     reading = get_sensor().get_data()
-
-    now = datetime.now().astimezone()
-    history.append(reading)
-
-    # Drop old entries
-    cutoff = now - timedelta(hours=HISTORY_HOURS)
-    while history and datetime.fromisoformat(history[0]["timestamp"]) < cutoff:
-        history.popleft()
-
+    # Write value to file for history
+    with open(DATA_FILE, "w") as f:
+        f.write(json.dumps(reading))
     return jsonify(reading)
-
-@app.route("/history")
-def history_data():
-    return jsonify(list(history))
 
 @app.route("/config", methods=["POST"])
 def update_config():

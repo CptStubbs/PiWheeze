@@ -22,18 +22,6 @@
                 });
         }
 
-        function save() {
-            fetch('/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    refresh_interval: parseFloat(
-                        document.getElementById('interval').value
-                    )
-                })
-            });
-        }
-
         setInterval(fetchData, 1000);
         fetchData();
     const ctx = document.getElementById('co2Chart').getContext('2d');
@@ -57,7 +45,7 @@
                     title: { display: true, text: 'Time' }
                 },
                 y: {
-                    title: { display: true, text: 'ppm' }
+                    title: { display: true, text: 'PPM' }
                 }
             }
         }
