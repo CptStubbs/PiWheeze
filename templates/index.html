@@ -1,18 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Sensor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>Live Sensor Data</h1>
     <pre id="data"></pre>
 
-    <h2>Configuration</h2>
-    <label>
-        Refresh Interval (seconds):
-        <input id="interval" type="number" step="0.1" value="{{ interval }}">
-    </label>
-    <button onclick="save()">Save</button>
+    <h2>Last 24 Hours</h2>
+    <canvas id="co2Chart" width="800" height="300"></canvas>
 
     <script>
         function fetchData() {
@@ -38,6 +36,46 @@
 
         setInterval(fetchData, 1000);
         fetchData();
+    const ctx = document.getElementById('co2Chart').getContext('2d');
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'CO₂ ppm',
+                data: [],
+                borderWidth: 2,
+                tension: 0.2
+            }]
+        },
+        options: {
+            animation: false,
+            responsive: true,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Time' }
+                },
+                y: {
+                    title: { display: true, text: 'ppm' }
+                }
+            }
+        }
+    });
+    /* ---------- History polling ---------- */
+    async function updateChart() {
+    const res = await fetch('/history');
+    const data = await res.json();
+
+    chart.data.labels = data.map(d =>
+        new Date(d.timestamp).toLocaleTimeString()
+    );
+    chart.data.datasets[0].data = data.map(d => d.co2_ppm);
+
+    chart.update();
+}
+
     </script>
+
 </body>
 </html>
