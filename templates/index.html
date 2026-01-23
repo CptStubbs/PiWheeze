@@ -41,12 +41,12 @@
     const chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
             datasets: [{
                 label: 'CO₂ ppm',
-                data: [],
+                data: [],          // points will be {x: timestamp, y: co2_ppm}
                 borderWidth: 2,
-                tension: 0.2
+                tension: 0.2,
+                fill: false
             }]
         },
         options: {
@@ -54,7 +54,12 @@
             responsive: true,
             scales: {
                 x: {
-                    title: { display: true, text: 'Time' }
+                    type: 'time',       // time axis
+                    time: {
+                        unit: 'hour',
+                        tooltipFormat: 'HH:mm'
+                    },
+                    title: { display: true, text: 'Time (UTC)' }
                 },
                 y: {
                     title: { display: true, text: 'ppm' }
@@ -62,17 +67,24 @@
             }
         }
     });
-    /* ---------- History polling ---------- */
+
+    // ---------- History polling ----------
     async function updateChart() {
-    const res = await fetch('/history');
-    const data = await res.json();
+        const res = await fetch('/history');
+        const data = await res.json();
 
-    chart.data.labels = data.map(d =>
-        new Date(d.timestamp).toLocaleTimeString()
-    );
-    chart.data.datasets[0].data = data.map(d => d.co2_ppm);
+        // map history into Chart.js {x: timestamp, y: value}
+        chart.data.datasets[0].data = data.map(d => ({
+            x: d.timestamp,  // ISO8601 string from backend
+            y: d.co2_ppm
+        }));
 
-    chart.update();
+        chart.update();
+    }
+
+    // update every 5 seconds
+    setInterval(updateChart, 5000);
+    updateChart();
 }
 
     </script>

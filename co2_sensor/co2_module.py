@@ -33,6 +33,7 @@ class Co2Sensor:
         self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
 
     def get_data(self) -> dict:
+        timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
         if not self.available:
             return self.last_good_data or {
                 "status": "sensor_unavailable",
@@ -40,7 +41,7 @@ class Co2Sensor:
                 "co2_ppm": None,
                 "temperature": None,
                 "humidity": None,
-                "timestamp": datetime.now().astimezone().isoformat(timespec="seconds")
+                "timestamp": timestamp
             }
 
         try:
@@ -52,7 +53,7 @@ class Co2Sensor:
                 "co2_ppm": self.scd.CO2,
                 "temperature": self.scd.temperature,
                 "humidity": self.scd.relative_humidity,
-                "timestamp": datetime.now().astimezone().isoformat(timespec="seconds")
+                "timestamp": timestamp
             }
 
             self.last_good_data = data
