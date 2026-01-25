@@ -1,10 +1,11 @@
 import csv
 import os
+import time
+import threading
 from flask import Flask, jsonify, request, render_template, Response
 from co2_sensor.co2_module import Co2Sensor
-from constants import APP_PORT, CO2_PPM, DATA_FILE, HUMIDITY, INDEX_HTML, TEMPERATURE, TIMESTAMP
+from constants import APP_PORT, CO2_PPM, DATA_FILE, HUMIDITY, INDEX_HTML, LOG_INTERVAL_SECONDS, TEMPERATURE, TIMESTAMP
 from collections import deque
-
 
 history = deque()
 config = {
@@ -13,33 +14,57 @@ config = {
 app = Flask(__name__)
 sensor = None
 
-def get_sensor():
+def get_sensor() -> Co2Sensor:
+    """
+    Set up the CO2 sensor to be global for the app
+    """
     global sensor
     if sensor is None:
         sensor = Co2Sensor()
     return sensor
 
-def write_to_file(reading:dict[str, float]):
-    # Ensure data directory exists
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-    file_exists = os.path.isfile(DATA_FILE)
+def init_csv() -> None:
+    """ Initialize the CSV file """
+    if not os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                TIMESTAMP,
+                CO2_PPM,
+                TEMPERATURE,
+                HUMIDITY
+            ])
 
-    # open as "append" type
-    with open(DATA_FILE, "a", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[TIMESTAMP, CO2_PPM, TEMPERATURE, HUMIDITY],
-        )
+def write_sensor_data_to_file() -> None:
+    """
+    Main loop of app. Writes to file
+    """
+    co2_sensor = get_sensor()
+    init_csv()
 
-        if not file_exists:
-            writer.writeheader()
+    print("Starting sensor logging loop")
 
-        writer.writerow({
-            TIMESTAMP: reading[TIMESTAMP],
-            CO2_PPM: reading[CO2_PPM],
-            TEMPERATURE: reading[TEMPERATURE],
-            HUMIDITY: reading[HUMIDITY],
-        })
+    while True:
+        try:
+            reading = co2_sensor.get_data()
+
+            # Open file as type append
+            with open(DATA_FILE, "a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    reading[TIMESTAMP],
+                    reading[CO2_PPM],
+                    reading[TEMPERATURE],
+                    reading[HUMIDITY]
+                ])
+
+            print(f"Debug! Timestamp> {reading[TIMESTAMP]}")
+
+        except Exception as e:
+            # Do NOT crash the loop on sensor hiccups
+            print("Sensor read error:", e)
+
+        time.sleep(LOG_INTERVAL_SECONDS)
 
 @app.route("/")
 def index() -> str:
@@ -53,7 +78,7 @@ def data() -> Response:
     # Get current value
     reading = get_sensor().get_data()
     # Write value to file for history
-    write_to_file(reading)
+    #write_to_file(reading)
     return jsonify(reading)
 
 @app.route("/config", methods=["POST"])
@@ -87,6 +112,11 @@ def main():
     print("Running default terminal mode")
     print("Press Ctrl+C to exit")
     print("*" * 50)
+
+    # Run main loop
+    t = threading.Thread(target=write_sensor_data_to_file(), daemon=True)
+    t.start()
+
     app.run(host="0.0.0.0", port=APP_PORT)
 
 if __name__ == "__main__":
