@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import time
 
 from constants import SAMPLING_INTERVAL_SECONDS, HUMIDITY, DATA_FILE, TIMESTAMP, TEMPERATURE, CO2_PPM
@@ -33,7 +33,50 @@ while True:
         hum_text.text(f"Humidity: {latest[HUMIDITY]:.1f} %")
 
         # Plot history
-        fig = px.line(df, x=TIMESTAMP, y=[CO2_PPM, TEMPERATURE, HUMIDITY], title="CO₂ History")
+        fig = go.Figure()
+
+        # CO2 on primary y-axis
+        fig.add_trace(go.Scatter(
+            x=df[TIMESTAMP],
+            y=df[CO2_PPM],
+            mode='lines',
+            name='CO2 ppm',
+            yaxis='y1'
+        ))
+        # Temperature on secondary y-axis
+        fig.add_trace(go.Scatter(
+            x=df[TIMESTAMP],
+            y=df[TEMPERATURE],
+            mode='lines',
+            name='Temperature °C',
+            yaxis='y2'
+        ))
+
+        # Humidity on secondary y-axis
+        fig.add_trace(go.Scatter(
+            x=df[TIMESTAMP],
+            y=df[HUMIDITY],
+            mode='lines',
+            name='Humidity %',
+            yaxis='y2'
+        ))
+
+        # Layout with two y-axes
+        fig.update_layout(
+            title="CO2 / Temperature / Humidity History",
+            xaxis=dict(title="Time"),
+            yaxis=dict(
+                title="CO2 ppm",
+                side='left'
+            ),
+            yaxis2=dict(
+                title="Temp / Humidity",
+                overlaying='y',
+                side='right'
+            ),
+            legend=dict(x=0, y=1)
+        )
+
         chart_placeholder.plotly_chart(fig)
 
     time.sleep(SAMPLING_INTERVAL_SECONDS)
