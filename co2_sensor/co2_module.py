@@ -2,12 +2,17 @@ import time
 from board import SCL, SDA
 from busio import I2C
 from adafruit_scd30 import SCD30
+from constants import (CO2_PPM,
+                       ERROR,
+                       HUMIDITY,
+                       REFERENCE_LEVEL_CO2_PPM,
+                       SAMPLING_INTERVAL_SECONDS,
+                       STATUS,
+                       TEMPERATURE, TIMESTAMP,
+                       WAIT_INTERVAL_SECONDS)
 from datetime import datetime
 
-S2C_FREQUENCY = 50000
-REFERENCE_LEVEL_CO2_PPM = 425
-SAMPLING_INTERVAL_SECONDS = 10
-WAIT_INTERVAL_SECONDS = 1
+
 
 class Co2Sensor:
     def __init__(self):
@@ -35,31 +40,31 @@ class Co2Sensor:
     def get_data(self) -> dict:
         if not self.available:
             return self.last_good_data or {
-                "status": "sensor_unavailable",
-                "error": self.error,
-                "co2_ppm": None,
-                "temperature": None,
-                "humidity": None,
-                "timestamp": datetime.now().astimezone().isoformat(timespec="seconds")
+                STATUS: "sensor_unavailable",
+                ERROR: self.error,
+                CO2_PPM: None,
+                TEMPERATURE: None,
+                HUMIDITY: None,
+                TIMESTAMP: datetime.now().astimezone().isoformat(timespec="seconds")
             }
 
         try:
             if not self.scd.data_available:
-                return self.last_good_data or {"status": "warming_up"}
+                return self.last_good_data or {STATUS: "warming_up"}
 
 
             data = {
-                "co2_ppm": self.scd.CO2,
-                "temperature": self.scd.temperature,
-                "humidity": self.scd.relative_humidity,
-                "timestamp": datetime.now().astimezone().isoformat(timespec="seconds")
+                CO2_PPM: self.scd.CO2,
+                TEMPERATURE: self.scd.temperature,
+                HUMIDITY: self.scd.relative_humidity,
+                TIMESTAMP: datetime.now().astimezone().isoformat(timespec="seconds")
             }
 
             self.last_good_data = data
             return data
 
         except Exception:
-            return self.last_good_data or {"status": "i2c_error"}
+            return self.last_good_data or {STATUS: "i2c_error"}
 
     def simple_terminal_mode(self):
         """
