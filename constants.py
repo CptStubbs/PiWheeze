@@ -4,7 +4,7 @@ import os
 APP_PORT = 5000
 DATA_FILE = os.path.join("data_storage", "data.csv")
 INDEX_HTML = "index.html"
-HISTORY_HOURS = 24
+RETENTION_DAYS = 7
 LOG_INTERVAL_SECONDS = 10
 
 # Sensor Field Names

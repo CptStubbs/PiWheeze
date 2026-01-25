@@ -4,8 +4,9 @@ import time
 import threading
 from flask import Flask, jsonify, request, render_template, Response
 from co2_sensor.co2_module import Co2Sensor
-from constants import APP_PORT, CO2_PPM, DATA_FILE, HUMIDITY, INDEX_HTML, LOG_INTERVAL_SECONDS, TEMPERATURE, TIMESTAMP
+from constants import APP_PORT, CO2_PPM, DATA_FILE, HUMIDITY, INDEX_HTML, LOG_INTERVAL_SECONDS,RETENTION_DAYS, TEMPERATURE, TIMESTAMP
 from collections import deque
+from datetime import datetime, timedelta
 
 history = deque()
 config = {
@@ -22,6 +23,31 @@ def get_sensor() -> Co2Sensor:
     if sensor is None:
         sensor = Co2Sensor()
     return sensor
+
+def prune_csv() -> None:
+    """
+    Delete old values in the CSV file
+    """
+    if not os.path.exists(DATA_FILE):
+        raise FileNotFoundError(DATA_FILE)
+
+    cutoff = datetime.now() - timedelta(days=RETENTION_DAYS)
+    kept_rows = []
+
+    with open(DATA_FILE, newline="") as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+
+        for row in reader:
+            ts = datetime.fromisoformat(row["timestamp"])
+            if ts >= cutoff:
+                kept_rows.append(row)
+
+    # Rewrite file with kept rows
+    with open(DATA_FILE, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(kept_rows)
 
 def init_csv() -> None:
     """ Initialize the CSV file """
@@ -57,8 +83,7 @@ def write_sensor_data_to_file() -> None:
                     reading[TEMPERATURE],
                     reading[HUMIDITY]
                 ])
-
-            print(f"Debug! Timestamp> {reading[TIMESTAMP]}")
+            prune_csv()
 
         except Exception as e:
             # Do NOT crash the loop on sensor hiccups
