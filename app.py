@@ -1,7 +1,6 @@
 import csv
 import os
 import time
-import threading
 from co2_sensor.co2_module import Co2Sensor
 from constants import CO2_PPM, DATA_FILE, FIELDNAMES, HUMIDITY, LOG_INTERVAL_SECONDS, MAX_LINES, TEMPERATURE, TIMESTAMP
 from collections import deque

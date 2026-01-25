@@ -8,14 +8,17 @@ services:
       - /dev/i2c-1:/dev/i2c-1
     privileged: true
     volumes:
-      - ./data_storage:/data_storage
+      - data-storage:/data_storage
     network_mode: host
     restart: unless-stopped
   dashboard:
     build: .
     volumes:
-      - ./data_storage:/data_storage
+      - data-storage:/data_storage
     command: streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0
     ports:
       - "8501:8501"
     restart: unless-stopped
+
+volumes:
+  data-storage:
