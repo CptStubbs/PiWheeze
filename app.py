@@ -14,6 +14,7 @@ config = {
 }
 app = Flask(__name__)
 sensor = None
+latest_row = None
 
 def get_sensor() -> Co2Sensor:
     """
@@ -39,6 +40,7 @@ def prune_csv() -> None:
         fieldnames = reader.fieldnames
 
         for row in reader:
+            print(f"!! DEBUG !! {row}")
             ts = datetime.fromisoformat(row["timestamp"])
             if ts >= cutoff:
                 kept_rows.append(row)
@@ -49,17 +51,24 @@ def prune_csv() -> None:
         writer.writeheader()
         writer.writerows(kept_rows)
 
-def init_csv() -> None:
-    """ Initialize the CSV file """
+def init_csv():
     if not os.path.exists(DATA_FILE):
         with open(DATA_FILE, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                TIMESTAMP,
-                CO2_PPM,
-                TEMPERATURE,
-                HUMIDITY
-            ])
+            writer = csv.DictWriter(f, fieldnames=[TIMESTAMP, CO2_PPM, TEMPERATURE, HUMIDITY])
+            writer.writeheader()
+
+def append_row(row):
+    global latest_row
+    latest_row = row
+    with open(DATA_FILE, "a", newline="") as f:
+        fieldnames = [TIMESTAMP, CO2_PPM, TEMPERATURE, HUMIDITY]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writerow({
+            TIMESTAMP: row["timestamp"],
+            CO2_PPM: row["co2_ppm"],
+            TEMPERATURE: row["temperature"],
+            HUMIDITY: row["humidity"],
+        })
 
 def write_sensor_data_to_file() -> None:
     """
@@ -71,50 +80,21 @@ def write_sensor_data_to_file() -> None:
     print("Starting sensor logging loop")
 
     while True:
-        try:
-            reading = co2_sensor.get_data()
-
-            # Open file as type append
-            with open(DATA_FILE, "a", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    reading[TIMESTAMP],
-                    reading[CO2_PPM],
-                    reading[TEMPERATURE],
-                    reading[HUMIDITY]
-                ])
-            prune_csv()
-
-        except Exception as e:
-            # Do NOT crash the loop on sensor hiccups
-            print("Sensor read error:", e)
+        # Get latest value
+        reading = co2_sensor.get_data()
+        # Write and prune CSV
+        append_row(reading)
+        prune_csv()
 
         time.sleep(LOG_INTERVAL_SECONDS)
 
-@app.route("/")
-def index() -> str:
-    return render_template(
-        INDEX_HTML,
-        interval=config["refresh_interval_seconds"]
-    )
 
-@app.route("/data")
-def data() -> Response:
-    # Get current value
-    reading = get_sensor().get_data()
-    # Write value to file for history
-    #write_to_file(reading)
-    return jsonify(reading)
-
-@app.route("/config", methods=["POST"])
-def update_config() -> Response:
-    config.update(request.json)
-    return jsonify(config)
-
-@app.route("/history")
-def history():
+def read_full_history() -> list[dict]:
+    """
+    Read the full CSV file for all sensor history
+    """
     if not os.path.exists(DATA_FILE):
-        return jsonify([])
+        raise FileNotFoundError(DATA_FILE)
 
     rows = []
 
@@ -125,10 +105,35 @@ def history():
                 TIMESTAMP: row[TIMESTAMP],
                 CO2_PPM: float(row[CO2_PPM]),
                 TEMPERATURE: float(row[TEMPERATURE]),
-                HUMIDITY: float(row[HUMIDITY])
+                HUMIDITY: float(row[HUMIDITY]),
             })
 
-    return jsonify(rows)
+    return rows
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/current")
+def current():
+    return jsonify(latest_row)
+
+@app.route("/data")
+def data() -> Response:
+    # Get current value
+    reading = get_sensor().get_data()
+    # Write value to file for history
+    return jsonify(reading)
+
+@app.route("/config", methods=["POST"])
+def update_config() -> Response:
+    config.update(request.json)
+    return jsonify(config)
+
+@app.route("/history")
+def history():
+    return jsonify(read_full_history())
 
 def main():
     print("*"*50)
@@ -139,7 +144,7 @@ def main():
     print("*" * 50)
 
     # Run main loop
-    t = threading.Thread(target=write_sensor_data_to_file(), daemon=True)
+    t = threading.Thread(target=write_sensor_data_to_file, daemon=True)
     t.start()
 
     app.run(host="0.0.0.0", port=APP_PORT)
