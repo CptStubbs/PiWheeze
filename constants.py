@@ -1,10 +1,8 @@
 import os
 
 
-APP_PORT = 5000
-DATA_FILE = os.path.join("data_storage", "data.csv")
-INDEX_HTML = "index.html"
-RETENTION_DAYS = 7
+DATA_FILE = "/data_storage/data.csv"
+MAX_LINES = 5000
 LOG_INTERVAL_SECONDS = 10
 
 # Sensor Field Names
@@ -14,6 +12,7 @@ HUMIDITY = "humidity"
 STATUS = "status"
 TEMPERATURE = "temperature"
 TIMESTAMP = "timestamp"
+FIELDNAMES = [TIMESTAMP, CO2_PPM, TEMPERATURE, HUMIDITY]
 
 # Sensor Params
 S2C_FREQUENCY = 50000
