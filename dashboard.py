@@ -14,7 +14,7 @@ temp_text = st.empty()
 hum_text = st.empty()
 
 # Chart placeholder
-st.subheader("Historical CO₂ (last N rows)")
+st.subheader("Historical CO₂")
 chart_placeholder = st.empty()
 
 while True:
@@ -33,7 +33,7 @@ while True:
         hum_text.text(f"Humidity: {latest[HUMIDITY]:.1f} %")
 
         # Plot history
-        fig = px.line(df, x=TIMESTAMP, y=CO2_PPM, title="CO₂ History")
-        chart_placeholder.plotly_chart(fig, use_container_width=True)
+        fig = px.line(df, x=TIMESTAMP, y=[CO2_PPM, TEMPERATURE, HUMIDITY], title="CO₂ History")
+        chart_placeholder.plotly_chart(fig)
 
     time.sleep(SAMPLING_INTERVAL_SECONDS)
