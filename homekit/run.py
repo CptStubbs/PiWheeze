@@ -9,6 +9,8 @@ from homekit.accessory import PiWheezeBridge
 
 
 def main() -> None:
+    os.umask(0o077)
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -16,6 +18,7 @@ def main() -> None:
     logger = logging.getLogger(__name__)
 
     os.makedirs(HOMEKIT_STATE_DIR, exist_ok=True)
+    os.chmod(HOMEKIT_STATE_DIR, 0o700)
 
     driver = AccessoryDriver(
         port=HOMEKIT_PORT,

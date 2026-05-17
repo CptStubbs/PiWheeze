@@ -53,9 +53,12 @@ def append_row_rolling(row: dict):
     if len(lines) > MAX_LINES + 1:  # +1 for header
         lines = [lines[0]] + lines[-MAX_LINES:]
 
-    # Rewrite CSV
-    with open(DATA_FILE, "w", newline="") as f:
+    # Atomic rewrite: write to tmp + rename. os.replace is atomic on POSIX,
+    # so a kill mid-write can never leave a half-written CSV.
+    tmp_path = DATA_FILE + ".tmp"
+    with open(tmp_path, "w", newline="") as f:
         f.writelines(lines)
+    os.replace(tmp_path, DATA_FILE)
 
 def write_sensor_data_to_file() -> None:
     """

@@ -60,6 +60,16 @@ class Co2Sensor:
                 TIMESTAMP: datetime.now().astimezone().isoformat(timespec="seconds")
             }
 
+            # SCD30 datasheet ranges. Out-of-range values come from sensor
+            # malfunction or tampering; treat as missing so downstream
+            # consumers don't push absurd values into HomeKit / the CSV.
+            if not (0 <= data[CO2_PPM] <= 40000):
+                data[CO2_PPM] = None
+            if not (-40 <= data[TEMPERATURE] <= 85):
+                data[TEMPERATURE] = None
+            if not (0 <= data[HUMIDITY] <= 100):
+                data[HUMIDITY] = None
+
             self.last_good_data = data
             return data
 
