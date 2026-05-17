@@ -2,7 +2,7 @@ import os
 
 
 DATA_FILE = "/data_storage/data.csv"
-MAX_LINES = 5000
+MAX_LINES = 7000
 LOG_INTERVAL_SECONDS = 10
 
 # Sensor Field Names
