@@ -5,3 +5,4 @@ RPi.GPIO
 streamlit
 pandas
 plotly
+HAP-python

@@ -50,16 +50,30 @@ cachetools==6.2.5
     # via streamlit
 certifi==2026.1.4
     # via requests
+cffi==2.0.0
+    # via cryptography
+chacha20poly1305-reuseable==0.13.2
+    # via hap-python
 charset-normalizer==3.4.4
     # via requests
 click==8.3.1
     # via streamlit
+cryptography==48.0.0
+    # via
+    #   chacha20poly1305-reuseable
+    #   hap-python
 gitdb==4.0.12
     # via gitpython
 gitpython==3.1.46
     # via streamlit
+h11==0.16.0
+    # via hap-python
+hap-python==5.0.0
+    # via -r requirements.in
 idna==3.11
     # via requests
+ifaddr==0.2.0
+    # via zeroconf
 jinja2==3.1.6
     # via
     #   altair
@@ -79,6 +93,8 @@ numpy==2.4.1
     #   pandas
     #   pydeck
     #   streamlit
+orjson==3.11.9
+    # via hap-python
 packaging==26.0
     # via
     #   altair
@@ -96,6 +112,8 @@ protobuf==6.33.4
     # via streamlit
 pyarrow==23.0.0
     # via streamlit
+pycparser==3.0
+    # via cffi
 pydeck==0.9.1
     # via streamlit
 pyftdi==0.57.1
@@ -147,3 +165,5 @@ tzdata==2025.3
     # via pandas
 urllib3==2.6.3
     # via requests
+zeroconf==0.149.3
+    # via hap-python
