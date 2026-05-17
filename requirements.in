@@ -1,7 +1,5 @@
-adafruit-circuitpython-scd30
-adafruit-blinka
+scd30-i2c
 smbus2
-RPi.GPIO
 streamlit
 pandas
 plotly

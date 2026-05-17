@@ -2,13 +2,11 @@ services:
   sensor_data:
     build: .
     environment:
-      BLINKA_FORCEBOARD: RASPBERRY_PI_3B
-      BLINKA_I2C: 1
       TZ: America/Los_Angeles
     devices:
       - /dev/i2c-1:/dev/i2c-1
     group_add:
-      - "i2c"
+      - "988"   # host i2c GID on Raspberry Pi OS Trixie
     volumes:
       - data-storage:/data_storage
     security_opt:

@@ -3,13 +3,8 @@ import os
 import time
 from co2_sensor.co2_module import Co2Sensor
 from constants import CO2_PPM, DATA_FILE, FIELDNAMES, HUMIDITY, LOG_INTERVAL_SECONDS, MAX_LINES, TEMPERATURE, TIMESTAMP
-from collections import deque
 from io import StringIO
 
-history = deque()
-config = {
-    "refresh_interval_seconds": 1
-}
 sensor = None
 latest_row = None
 
@@ -40,9 +35,14 @@ def append_row_rolling(row: dict):
     with open(DATA_FILE, "r", newline="") as f:
         lines = f.readlines()
 
-    # Append new row as CSV string
+    # Append new row as CSV string. extrasaction="ignore" so diagnostic keys
+    # like STATUS / ERROR returned by Co2Sensor.get_data() don't crash the
+    # writer; restval="" so missing sensor values become empty cells rather
+    # than the literal string "None".
     output = StringIO()
-    writer = csv.DictWriter(output, fieldnames=FIELDNAMES)
+    writer = csv.DictWriter(
+        output, fieldnames=FIELDNAMES, extrasaction="ignore", restval=""
+    )
     writer.writerow(row)
     new_line = output.getvalue()
 

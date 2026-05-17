@@ -1,7 +1,8 @@
 import time
-from board import SCL, SDA
-from busio import I2C
-from adafruit_scd30 import SCD30
+from datetime import datetime
+
+from scd30_i2c import SCD30
+
 from constants import (CO2_PPM,
                        ERROR,
                        HUMIDITY,
@@ -10,23 +11,22 @@ from constants import (CO2_PPM,
                        STATUS,
                        TEMPERATURE, TIMESTAMP,
                        WAIT_INTERVAL_SECONDS)
-from datetime import datetime
-
 
 
 class Co2Sensor:
     def __init__(self):
         self.last_good_data = None
         self.available = False
+        self.error = None
         try:
-            self.i2c = I2C(SCL, SDA)
-            self.scd = SCD30(self.i2c)
-            self.scd.measurement_interval = SAMPLING_INTERVAL_SECONDS
+            self.scd = SCD30()
+            self.scd.set_measurement_interval(SAMPLING_INTERVAL_SECONDS)
+            self.scd.start_periodic_measurement()
             self.available = True
         except Exception as e:
-            self.error = str(e)
+            self.error = repr(e)
             self.scd = None
-            self.i2c = None
+            print(f"[Co2Sensor] init failed: {self.error}", flush=True)
 
     def calibrate_sensor(self):
         """
@@ -34,8 +34,7 @@ class Co2Sensor:
 
         Assumes that sensor is in stable, outside level air
         """
-
-        self.scd.forced_recalibration_reference = REFERENCE_LEVEL_CO2_PPM
+        self.scd.force_recalibration(REFERENCE_LEVEL_CO2_PPM)
 
     def get_data(self) -> dict:
         if not self.available:
@@ -49,14 +48,19 @@ class Co2Sensor:
             }
 
         try:
-            if not self.scd.data_available:
+            if not self.scd.get_data_ready():
                 return self.last_good_data or {STATUS: "warming_up"}
 
+            measurement = self.scd.read_measurement()
+            if measurement is None:
+                return self.last_good_data or {STATUS: "no_measurement"}
+
+            co2, temperature, humidity = measurement
 
             data = {
-                CO2_PPM: self.scd.CO2,
-                TEMPERATURE: self.scd.temperature,
-                HUMIDITY: self.scd.relative_humidity,
+                CO2_PPM: co2,
+                TEMPERATURE: temperature,
+                HUMIDITY: humidity,
                 TIMESTAMP: datetime.now().astimezone().isoformat(timespec="seconds")
             }
 
@@ -82,15 +86,17 @@ class Co2Sensor:
         Mostly used for debugging
         """
         print("Warming up sensor...")
-        while not self.scd.data_available:
+        while not self.scd.get_data_ready():
             time.sleep(WAIT_INTERVAL_SECONDS)
 
         while True:
-            self.get_data()
-            print(f"CO2: {self.scd.CO2:.1f} ppm")
-            print(f"Temperature: {self.scd.temperature:.1f} °C")
-            print(f"Humidity: {self.scd.relative_humidity:.1f} %")
+            data = self.get_data()
+            print(f"CO2: {data[CO2_PPM]} ppm")
+            print(f"Temperature: {data[TEMPERATURE]} °C")
+            print(f"Humidity: {data[HUMIDITY]} %")
             print("-" * 30)
+            time.sleep(SAMPLING_INTERVAL_SECONDS)
+
 
 if __name__ == "__main__":
     co2_sensor = Co2Sensor()
