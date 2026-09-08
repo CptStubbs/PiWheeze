@@ -26,6 +26,8 @@ services:
       - "8501"
     environment:
       TZ: America/Los_Angeles
+      DASHBOARD_PASSWORD_HASH: ${DASHBOARD_PASSWORD_HASH}
+      DASHBOARD_COOKIE_KEY: ${DASHBOARD_COOKIE_KEY}
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -60,8 +62,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    environment:
-      DASHBOARD_BASIC_AUTH_HASH: ${DASHBOARD_BASIC_AUTH_HASH}
     security_opt:
       - no-new-privileges:true
     cap_drop:

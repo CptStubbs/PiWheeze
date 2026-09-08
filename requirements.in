@@ -1,6 +1,7 @@
 scd30-i2c
 smbus2
 streamlit
+streamlit-authenticator
 pandas
 plotly
 HAP-python

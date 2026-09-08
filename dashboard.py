@@ -1,9 +1,39 @@
+import os
 import streamlit as st
+import streamlit_authenticator as stauth
 import pandas as pd
 import plotly.graph_objects as go
 import time
 
 from constants import SAMPLING_INTERVAL_SECONDS, HUMIDITY, DATA_FILE, TIMESTAMP, TEMPERATURE, CO2_PPM
+
+DASHBOARD_USERNAME = "piwheeze"
+
+authenticator = stauth.Authenticate(
+    {
+        "usernames": {
+            DASHBOARD_USERNAME: {
+                "name": "PiWheeze",
+                "password": os.environ["DASHBOARD_PASSWORD_HASH"],
+            }
+        }
+    },
+    "piwheeze_auth",
+    os.environ["DASHBOARD_COOKIE_KEY"],
+    365,
+    auto_hash=False,
+)
+
+authenticator.login()
+
+if st.session_state.get("authentication_status") is False:
+    st.error("Username/password is incorrect")
+    st.stop()
+elif st.session_state.get("authentication_status") is None:
+    st.warning("Please enter your username and password")
+    st.stop()
+
+authenticator.logout("Log out", "sidebar")
 
 st.title("CO₂ Sensor Dashboard")
 
@@ -74,9 +104,15 @@ while True:
                 overlaying='y',
                 side='right'
             ),
-            legend=dict(x=0, y=1)
+            legend=dict(x=0, y=1),
+            # Keeps the user's zoom/pan when the figure is redrawn with new data;
+            # without this Plotly treats each update as a brand new chart and resets the view.
+            uirevision='constant'
         )
 
-        chart_placeholder.plotly_chart(fig)
+        # A stable key keeps this the same widget across redraws (instead of a new
+        # one each time the data changes), which is required for uirevision above
+        # to actually preserve zoom/pan.
+        chart_placeholder.plotly_chart(fig, key="history_chart")
 
     time.sleep(SAMPLING_INTERVAL_SECONDS)

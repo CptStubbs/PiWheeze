@@ -15,8 +15,8 @@ Four containers, all defined in `docker-compose.yml`:
 | Service       | Purpose                                         |
 | ------------- | ----------------------------------------------- |
 | `sensor_data` | Reads the SCD30 over I2C, appends to CSV        |
-| `dashboard`   | Streamlit live charts, internal only            |
-| `proxy`       | Caddy reverse proxy in front of the dashboard, basic auth |
+| `dashboard`   | Streamlit live charts + login, internal only    |
+| `proxy`       | Caddy reverse proxy in front of the dashboard   |
 | `homekit`     | HAP-python bridge — exposes sensors to Apple Home |
 
 ## First-time setup
@@ -28,10 +28,16 @@ prompt for actual password):
 docker run -it --rm caddy:2-alpine caddy hash-password
 ```
 
-Copy the example env file and paste the hash in:
+Generate a random secret key for signing the "stay logged in" cookie:
+```
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Copy the example env file and fill in both values:
 ```
 cp .env.example .env
-# edit .env, set DASHBOARD_BASIC_AUTH_HASH=<hash from above>
+# edit .env, set DASHBOARD_PASSWORD_HASH=<hash from above>
+# edit .env, set DASHBOARD_COOKIE_KEY=<secret from above>
 ```
 
 ## Run
@@ -45,7 +51,10 @@ Stop: `docker compose down`
 
 ## Dashboard
 Open `http://<pi-ip>:8501/` in any browser on the LAN. Log in with username
-`piwheeze` and the password you hashed during setup.
+`piwheeze` and the password you hashed during setup. A "stay logged in"
+cookie keeps you signed in for a year, including on iOS "Add to Home
+Screen" shortcuts, so you shouldn't need to log in again after the first
+time. Use the "Log out" button in the sidebar to end the session early.
 
 ## Apple Home
 On first boot the `homekit` service prints an 8-digit pairing PIN in its
@@ -55,8 +64,8 @@ CO2, Temperature, Humidity. Pairing state persists across restarts in the
 `homekit-state` volume.
 
 ## Data
-The rolling CSV lives in the `data-storage` named volume (capped at 7000
-rows ≈ 20 hours at the default 10-second interval). To export:
+The rolling CSV lives in the `data-storage` named volume (capped at 72
+hours of history at the default 10-second interval). To export:
 ```
 docker run --rm -v piwheeze_data-storage:/d alpine cat /d/data.csv > backup.csv
 ```
