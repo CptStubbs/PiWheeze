@@ -17,6 +17,7 @@ S2C_FREQUENCY = 50000
 REFERENCE_LEVEL_CO2_PPM = 425
 SAMPLING_INTERVAL_SECONDS = 10
 WAIT_INTERVAL_SECONDS = 1
+READ_FAILURES_BEFORE_RECONNECT = 6  # consecutive failed reads (~1 min) before re-initialising
 
 # HomeKit
 HOMEKIT_STATE_DIR = "/homekit_state"

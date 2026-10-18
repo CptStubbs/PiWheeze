@@ -6,6 +6,7 @@ from scd30_i2c import SCD30
 from constants import (CO2_PPM,
                        ERROR,
                        HUMIDITY,
+                       READ_FAILURES_BEFORE_RECONNECT,
                        REFERENCE_LEVEL_CO2_PPM,
                        SAMPLING_INTERVAL_SECONDS,
                        STATUS,
@@ -18,15 +19,62 @@ class Co2Sensor:
         self.last_good_data = None
         self.available = False
         self.error = None
+        self.scd = None
+        self._read_failures = 0
+        self._last_logged_error = None
+        self._connect()
+
+    def _log_error(self, message: str) -> None:
+        """Print an error, but only when it differs from the last one printed.
+
+        get_data() runs every few seconds, so a sensor that stays broken would
+        otherwise flood the logs with the same line.
+        """
+        if message != self._last_logged_error:
+            print(f"[Co2Sensor] {message}", flush=True)
+            self._last_logged_error = message
+
+    def _connect(self) -> None:
+        """
+        Start periodic measurement and set self.available / self.error.
+
+        Safe to call repeatedly: the I2C bus is opened once and reused, so a
+        retry only re-sends the setup commands. Called from __init__ and again
+        from get_data() whenever the sensor is unavailable, so a sensor that
+        wasn't ready at boot recovers on its own.
+        """
         try:
-            self.scd = SCD30()
+            if self.scd is None:
+                self.scd = SCD30()
             self.scd.set_measurement_interval(SAMPLING_INTERVAL_SECONDS)
             self.scd.start_periodic_measurement()
-            self.available = True
         except Exception as e:
+            self.available = False
             self.error = repr(e)
-            self.scd = None
-            print(f"[Co2Sensor] init failed: {self.error}", flush=True)
+            self._log_error(f"init failed: {self.error}")
+            self._try_soft_reset()
+            return
+
+        self.available = True
+        self.error = None
+        if self._last_logged_error is not None:
+            print("[Co2Sensor] sensor connected", flush=True)
+            self._last_logged_error = None
+
+    def _try_soft_reset(self) -> None:
+        """
+        Best-effort sensor restart (no power cycle needed) after a failed setup.
+
+        A Pi reboot doesn't cut power to the SCD30, so it can come back up stuck
+        in a state where it ignores commands. The next _connect() attempt then
+        finds it freshly reset.
+        """
+        if self.scd is None:
+            return
+        try:
+            self.scd.soft_reset()
+        except Exception:
+            pass  # sensor isn't answering at all; try again next round
 
     def calibrate_sensor(self):
         """
@@ -37,6 +85,9 @@ class Co2Sensor:
         self.scd.force_recalibration(REFERENCE_LEVEL_CO2_PPM)
 
     def get_data(self) -> dict:
+        if not self.available:
+            self._connect()
+
         if not self.available:
             return self.last_good_data or {
                 STATUS: "sensor_unavailable",
@@ -75,9 +126,18 @@ class Co2Sensor:
                 data[HUMIDITY] = None
 
             self.last_good_data = data
+            self._read_failures = 0
+            self._last_logged_error = None
             return data
 
-        except Exception:
+        except Exception as e:
+            self._log_error(f"read failed: {e!r}")
+            self._read_failures += 1
+            if self._read_failures >= READ_FAILURES_BEFORE_RECONNECT:
+                # Sensor has stopped answering; the next get_data() call
+                # re-initialises it instead of failing forever.
+                self._read_failures = 0
+                self.available = False
             return self.last_good_data or {STATUS: "i2c_error"}
 
     def simple_terminal_mode(self):
