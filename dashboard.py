@@ -5,7 +5,8 @@ import streamlit_authenticator as stauth
 import pandas as pd
 import plotly.graph_objects as go
 
-from constants import SAMPLING_INTERVAL_SECONDS, HUMIDITY, DATA_FILE, TIMESTAMP, TEMPERATURE, CO2_PPM
+from constants import (SAMPLING_INTERVAL_SECONDS, HUMIDITY, DATA_FILE, TIMESTAMP, TEMPERATURE, CO2_PPM,
+                       PM1_0, PM2_5, PM10, PM_DATA_FILE)
 
 DASHBOARD_USERNAME = "piwheeze"
 
@@ -42,6 +43,7 @@ st.subheader("Live Readings")
 co2_text = st.empty()
 temp_text = st.empty()
 hum_text = st.empty()
+pm_text = st.empty()
 
 # Chart placeholder
 st.subheader("Historical CO₂")
@@ -55,8 +57,43 @@ st.subheader("Historical CO₂")
 freeze = st.checkbox("⏸️ Freeze view (pause updates so zoom/pan stays put)")
 chart_placeholder = st.empty()
 
+st.subheader("Historical Particulates")
+pm_chart_placeholder = st.empty()
+
+
+def render_pm() -> None:
+    try:
+        df = pd.read_csv(PM_DATA_FILE)
+    except FileNotFoundError:
+        pm_text.text("Particulates: no data file yet (is the PMSA003I connected?)")
+        return
+
+    # Rows logged while the sensor was down are blank; drop them
+    df = df.dropna(subset=[TIMESTAMP, PM2_5])
+    if df.empty:
+        return
+
+    latest = df.iloc[-1]
+    pm_text.text(
+        f"PM1.0: {latest[PM1_0]:.0f} µg/m³   "
+        f"PM2.5: {latest[PM2_5]:.0f} µg/m³   "
+        f"PM10: {latest[PM10]:.0f} µg/m³"
+    )
+
+    fig = go.Figure()
+    for column, name in ((PM1_0, "PM1.0"), (PM2_5, "PM2.5"), (PM10, "PM10")):
+        fig.add_trace(go.Scatter(x=df[TIMESTAMP], y=df[column], mode='lines', name=name))
+    fig.update_layout(
+        title="Particulate History",
+        xaxis=dict(title="Time"),
+        yaxis=dict(title="µg/m³"),
+        legend=dict(x=0, y=1)
+    )
+    pm_chart_placeholder.plotly_chart(fig)
+
 
 def render() -> None:
+    render_pm()
     try:
         df = pd.read_csv(DATA_FILE)
     except FileNotFoundError:

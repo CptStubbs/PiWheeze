@@ -1,20 +1,22 @@
 # PiWheeze
-At home CO2 / Temp / Humidity monitoring, connected to Apple Home
+At home CO2 / Temp / Humidity / particulate monitoring, connected to Apple Home
 
 ## This Project
 This project assumes a few things:
 1. A Raspberry Pi 3B+ (or newer)
 2. An SCD30 CO2 + Temp + Humidity sensor connected over I2C
-3. Docker + Docker Compose installed on the Pi
-4. The `i2c` group exists on the Pi (default on Raspberry Pi OS); the `app`
+3. An optional Adafruit PMSA003I particulate sensor on the same I2C bus (address `0x12`)
+4. Docker + Docker Compose installed on the Pi
+5. The `i2c` group exists on the Pi (default on Raspberry Pi OS); the `app`
    user inside the containers joins it to read `/dev/i2c-1`
 
 ## Services
-Four containers, all defined in `docker-compose.yml`:
+Five containers, all defined in `docker-compose.yml`:
 
 | Service       | Purpose                                         |
 | ------------- | ----------------------------------------------- |
 | `sensor_data` | Reads the SCD30 over I2C, appends to CSV        |
+| `pm_sensor_data` | Reads the PMSA003I (PM1.0 / PM2.5 / PM10) over I2C, appends to its own CSV |
 | `dashboard`   | Streamlit live charts + login, internal only    |
 | `proxy`       | Caddy reverse proxy in front of the dashboard   |
 | `homekit`     | HAP-python bridge — exposes sensors to Apple Home |
@@ -59,12 +61,14 @@ time. Use the "Log out" button in the sidebar to end the session early.
 ## Apple Home
 On first boot the `homekit` service prints an 8-digit pairing PIN in its
 logs (`docker compose logs homekit`). Open the iPhone Home app, tap **+** →
-**Add Accessory** → **More Options** → enter the PIN. Three tiles appear:
-CO2, Temperature, Humidity. Pairing state persists across restarts in the
+**Add Accessory** → **More Options** → enter the PIN. Four tiles appear:
+CO2, Temperature, Humidity, Air Quality (PM2.5 / PM10 density plus an
+Excellent-to-Poor rating based on PM2.5). If you paired before the PMSA003I
+was added, the Air Quality tile appears on its own after a restart. Pairing state persists across restarts in the
 `homekit-state` volume.
 
 ## Data
-The rolling CSV lives in the `data-storage` named volume (capped at 72
+The rolling CSVs (`data.csv` and `pm_data.csv`) live in the `data-storage` named volume (capped at 72
 hours of history at the default 10-second interval). To export:
 ```
 docker run --rm -v piwheeze_data-storage:/d alpine cat /d/data.csv > backup.csv

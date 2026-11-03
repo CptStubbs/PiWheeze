@@ -18,21 +18,21 @@ def get_sensor() -> Co2Sensor:
     return sensor
 
 
-def init_csv():
-    if not os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+def init_csv(data_file: str = DATA_FILE, fieldnames: list[str] = FIELDNAMES):
+    if not os.path.exists(data_file):
+        with open(data_file, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 
-def append_row_rolling(row: dict):
+def append_row_rolling(row: dict, data_file: str = DATA_FILE, fieldnames: list[str] = FIELDNAMES):
     """
     Append a row to CSV and ensure the file never exceeds MAX_LINES.
     Pops the oldest line if needed.
     """
-    init_csv()
+    init_csv(data_file, fieldnames)
 
     # Read current lines including header
-    with open(DATA_FILE, "r", newline="") as f:
+    with open(data_file, "r", newline="") as f:
         lines = f.readlines()
 
     # Append new row as CSV string. extrasaction="ignore" so diagnostic keys
@@ -41,7 +41,7 @@ def append_row_rolling(row: dict):
     # than the literal string "None".
     output = StringIO()
     writer = csv.DictWriter(
-        output, fieldnames=FIELDNAMES, extrasaction="ignore", restval=""
+        output, fieldnames=fieldnames, extrasaction="ignore", restval=""
     )
     writer.writerow(row)
     new_line = output.getvalue()
@@ -55,10 +55,10 @@ def append_row_rolling(row: dict):
 
     # Atomic rewrite: write to tmp + rename. os.replace is atomic on POSIX,
     # so a kill mid-write can never leave a half-written CSV.
-    tmp_path = DATA_FILE + ".tmp"
+    tmp_path = data_file + ".tmp"
     with open(tmp_path, "w", newline="") as f:
         f.writelines(lines)
-    os.replace(tmp_path, DATA_FILE)
+    os.replace(tmp_path, data_file)
 
 def write_sensor_data_to_file() -> None:
     """
