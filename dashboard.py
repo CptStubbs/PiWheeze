@@ -3,12 +3,14 @@ import time
 import streamlit as st
 import streamlit_authenticator as stauth
 import pandas as pd
-import plotly.graph_objects as go
 
+import charts
 from constants import (SAMPLING_INTERVAL_SECONDS, HUMIDITY, DATA_FILE, TIMESTAMP, TEMPERATURE, CO2_PPM,
                        PM1_0, PM2_5, PM10, PM_DATA_FILE)
 
 DASHBOARD_USERNAME = "piwheeze"
+
+st.set_page_config(page_title="Sensor Dashboard")
 
 authenticator = stauth.Authenticate(
     {
@@ -36,7 +38,7 @@ elif st.session_state.get("authentication_status") is None:
 
 authenticator.logout("Log out", "sidebar")
 
-st.title("CO₂ Sensor Dashboard")
+st.title("Sensor Dashboard")
 
 # Live numeric values, each with the time it was measured
 st.subheader("Live Readings")
@@ -56,29 +58,16 @@ freeze = st.checkbox("⏸️ Freeze view (pause updates so zoom/pan stays put)")
 
 # One chart per quantity: they have unrelated scales, so sharing axes looked messy
 st.subheader("Historical Readings")
-co2_chart = st.empty()
-temp_chart = st.empty()
-hum_chart = st.empty()
-pm_chart = st.empty()
+co2_slot = st.empty()
+temp_slot = st.empty()
+hum_slot = st.empty()
+pm25_slot = st.empty()
+pm10_slot = st.empty()
 
 
 def fmt_time(timestamp: str) -> str:
     """ISO timestamp from the CSV -> 'YYYY-MM-DD HH:MM:SS' (the Pi's local time)."""
     return str(timestamp).replace("T", " ")[:19]
-
-
-def line_chart(placeholder, df: pd.DataFrame, series: list[tuple[str, str]], title: str, unit: str) -> None:
-    """Draw one chart; series is a list of (column, legend name) sharing one y-axis."""
-    fig = go.Figure()
-    for column, name in series:
-        fig.add_trace(go.Scatter(x=df[TIMESTAMP], y=df[column], mode='lines', name=name))
-    fig.update_layout(
-        title=title,
-        xaxis=dict(title="Time"),
-        yaxis=dict(title=unit),
-        legend=dict(x=0, y=1)
-    )
-    placeholder.plotly_chart(fig)
 
 
 def render_pm() -> None:
@@ -100,9 +89,8 @@ def render_pm() -> None:
         f"PM10: {latest[PM10]:.0f} µg/m³   "
         f"(measured {fmt_time(latest[TIMESTAMP])})"
     )
-    line_chart(pm_chart, df,
-               [(PM1_0, "PM1.0"), (PM2_5, "PM2.5"), (PM10, "PM10")],
-               "Particulate History", "µg/m³")
+    pm25_slot.plotly_chart(charts.pm2_5_chart(df))
+    pm10_slot.plotly_chart(charts.pm10_chart(df))
 
 
 def render() -> None:
@@ -123,9 +111,9 @@ def render() -> None:
     temp_text.text(f"Temperature: {latest[TEMPERATURE]:.1f} °C   {measured}")
     hum_text.text(f"Humidity: {latest[HUMIDITY]:.1f} %   {measured}")
 
-    line_chart(co2_chart, df, [(CO2_PPM, "CO2 ppm")], "CO₂ History", "ppm")
-    line_chart(temp_chart, df, [(TEMPERATURE, "Temperature °C")], "Temperature History", "°C")
-    line_chart(hum_chart, df, [(HUMIDITY, "Humidity %")], "Humidity History", "%")
+    co2_slot.plotly_chart(charts.co2_chart(df))
+    temp_slot.plotly_chart(charts.temperature_chart(df))
+    hum_slot.plotly_chart(charts.humidity_chart(df))
 
 
 # Always draw once immediately: on first load, and also whenever toggling the

@@ -214,3 +214,5 @@ __marimo__/
 # Pycharm Junk
 .idea
 .idea/
+# Chart previews written by tests/preview.py
+previews/

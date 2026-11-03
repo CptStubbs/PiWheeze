@@ -44,5 +44,25 @@ HOMEKIT_MANUFACTURER = "CptStubbs"
 HOMEKIT_MODEL = "PiWheeze-SCD30"
 HOMEKIT_PM_MODEL = "PiWheeze-PMSA003I"
 # Upper PM2.5 bounds (ug/m3) for HomeKit AirQuality 1 (Excellent) through 4 (Inferior);
-# anything above is 5 (Poor). Based on the US EPA AQI PM2.5 breakpoints.
-PM2_5_AIR_QUALITY_BOUNDS = (9.0, 35.4, 55.4, 150.4)
+# anything above is 5 (Poor). Based on the US EPA AQI PM2.5 breakpoints (2024 revision).
+PM2_5_AIR_QUALITY_BOUNDS = (9.0, 35.4, 55.4, 125.4)
+
+# Dashboard warning bands: (lower bound, label). Charts shade everything above.
+# Single-tier warnings are red; PM has a yellow caution tier and a red warning tier.
+CO2_WARNING_PPM = CO2_ABNORMAL_THRESHOLD_PPM
+TEMPERATURE_WARNING_C = 25
+HUMIDITY_WARNING_PERCENT = 85
+# PM2.5 (ug/m3): WHO 2021 24-hour guideline, then EPA "Unhealthy for Sensitive Groups"
+PM2_5_CAUTION_UG_M3 = 15
+PM2_5_WARNING_UG_M3 = 35.4
+# PM10 (ug/m3): WHO 2021 24-hour guideline, then EPA "Unhealthy for Sensitive Groups"
+PM10_CAUTION_UG_M3 = 45
+PM10_WARNING_UG_M3 = 154
+
+# Dashboard fixed y-axis ranges (min, max), so a glance shows good vs bad.
+# Values outside a range run off the chart; zoom out or check the live reading.
+CO2_Y_RANGE = (0, 1200)
+TEMPERATURE_Y_RANGE = (0, 30)
+HUMIDITY_Y_RANGE = (0, 100)
+PM2_5_Y_RANGE = (0, 75)
+PM10_Y_RANGE = (0, 200)

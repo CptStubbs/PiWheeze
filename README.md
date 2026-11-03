@@ -58,6 +58,15 @@ cookie keeps you signed in for a year, including on iOS "Add to Home
 Screen" shortcuts, so you shouldn't need to log in again after the first
 time. Use the "Log out" button in the sidebar to end the session early.
 
+### Previewing chart changes
+Charts are built in `charts.py` and can be previewed from mock data without
+the sensors, Docker or a login:
+```
+pip install -r requirements-dev.in
+python -m tests.preview     # writes previews/*.html (good air, warnings, spikes + gaps) and opens them
+python -m pytest            # checks y-ranges, warning bands and colours too
+```
+
 ## Apple Home
 On first boot the `homekit` service prints an 8-digit pairing PIN in its
 logs (`docker compose logs homekit`). Open the iPhone Home app, tap **+** →
