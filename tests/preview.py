@@ -12,6 +12,7 @@ import webbrowser
 from pathlib import Path
 
 import charts
+from readings import live_readings
 from tests.mock_data import SCENARIOS
 
 PREVIEW_DIR = Path(__file__).resolve().parent.parent / "previews"
@@ -32,6 +33,7 @@ def write_previews() -> list[Path]:
     for name, make_data in SCENARIOS.items():
         df = make_data()
         figures = [build(df) for build in CHART_BUILDERS]
+        table = live_readings(df.iloc[-1], df.iloc[-1]).to_html()
         # Embed plotly.js once, in the first figure, and reuse it for the rest
         body = "\n".join(
             fig.to_html(full_html=False, include_plotlyjs=True if i == 0 else False)
@@ -40,7 +42,7 @@ def write_previews() -> list[Path]:
         path = PREVIEW_DIR / f"{name}.html"
         path.write_text(
             f"<!doctype html><meta charset='utf-8'><title>{name}</title>"
-            f"<body style='font-family:sans-serif'><h2>{name}</h2>{body}</body>"
+            f"<body style='font-family:sans-serif'><h2>{name}</h2><h3>Live Readings</h3>{table}{body}</body>"
         )
         paths.append(path)
     return paths
